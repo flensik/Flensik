@@ -1,1 +1,299 @@
-https://drive.google.com/file/d/1Fi9me3ZuigmHEzbfvriQqmx4HkfvqDe4/view?usp=drivesdk
+-- Mobile Fly Script for Roblox with GUI
+-- Вставьте этот LocalScript в StarterPlayerScripts
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Настройки по умолчанию
+local flying = false
+local flySpeed = 50
+local turnSpeed = 2
+local flyEnabled = true
+
+-- Создаем GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "FlyMobileGUI"
+gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Основной фрейм
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0.3, 0, 0.4, 0)
+mainFrame.Position = UDim2.new(0.05, 0, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BackgroundTransparency = 0.3
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = gui
+
+-- Кнопка закрытия
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0.1, 0, 0.1, 0)
+closeButton.Position = UDim2.new(0.9, 0, 0, 0)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+closeButton.Parent = mainFrame
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, 0, 0.1, 0)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.Text = "Flight Controls"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.SourceSansBold
+title.TextScaled = true
+title.Parent = mainFrame
+
+-- Кнопка включения/выключения полета
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(0.8, 0, 0.15, 0)
+toggleButton.Position = UDim2.new(0.1, 0, 0.15, 0)
+toggleButton.Text = "Enable Flight"
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+toggleButton.Parent = mainFrame
+
+-- Слайдер скорости
+local speedSlider = Instance.new("Frame")
+speedSlider.Name = "SpeedSlider"
+speedSlider.Size = UDim2.new(0.8, 0, 0.15, 0)
+speedSlider.Position = UDim2.new(0.1, 0, 0.35, 0)
+speedSlider.BackgroundTransparency = 1
+speedSlider.Parent = mainFrame
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Name = "SpeedLabel"
+speedLabel.Size = UDim2.new(1, 0, 0.5, 0)
+speedLabel.Position = UDim2.new(0, 0, 0, 0)
+speedLabel.Text = "Speed: " .. flySpeed
+speedLabel.TextColor3 = Color3.new(1, 1, 1)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Parent = speedSlider
+
+local slider = Instance.new("TextButton")
+slider.Name = "Slider"
+slider.Size = UDim2.new(1, 0, 0.5, 0)
+slider.Position = UDim2.new(0, 0, 0.5, 0)
+slider.Text = ""
+slider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+slider.BorderSizePixel = 0
+slider.Parent = speedSlider
+
+local fill = Instance.new("Frame")
+fill.Name = "Fill"
+fill.Size = UDim2.new((flySpeed - 10) / 90, 0, 1, 0)
+fill.Position = UDim2.new(0, 0, 0, 0)
+fill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+fill.BorderSizePixel = 0
+fill.Parent = slider
+
+-- Кнопки управления (для мобильных устройств)
+local controlsFrame = Instance.new("Frame")
+controlsFrame.Name = "ControlsFrame"
+controlsFrame.Size = UDim2.new(0.6, 0, 0.3, 0)
+controlsFrame.Position = UDim2.new(0.2, 0, 0.55, 0)
+controlsFrame.BackgroundTransparency = 1
+controlsFrame.Parent = mainFrame
+
+local upButton = createControlButton("Up", UDim2.new(0.3, 0, 0, 0), "▲", controlsFrame)
+local downButton = createControlButton("Down", UDim2.new(0.3, 0, 0.6, 0), "▼", controlsFrame)
+local leftButton = createControlButton("Left", UDim2.new(0, 0, 0.3, 0), "◀", controlsFrame)
+local rightButton = createControlButton("Right", UDim2.new(0.6, 0, 0.3, 0), "▶", controlsFrame)
+local forwardButton = createControlButton("Forward", UDim2.new(0.3, 0, 0.3, 0), "F", controlsFrame)
+
+-- Функция для создания кнопок управления
+function createControlButton(name, position, text, parent)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = UDim2.new(0.3, 0, 0.3, 0)
+    button.Position = position
+    button.Text = text
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    button.BackgroundTransparency = 0.5
+    button.Parent = parent
+    return button
+end
+
+-- Кнопка для открытия меню
+local menuButton = Instance.new("TextButton")
+menuButton.Name = "MenuButton"
+menuButton.Size = UDim2.new(0.15, 0, 0.1, 0)
+menuButton.Position = UDim2.new(0.02, 0, 0.02, 0)
+menuButton.Text = "☰"
+menuButton.TextColor3 = Color3.new(1, 1, 1)
+menuButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+menuButton.BackgroundTransparency = 0.5
+menuButton.Parent = gui
+
+-- Обработчики событий GUI
+menuButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+    toggleFly()
+end)
+
+-- Обработка слайдера скорости
+local function updateSpeed(value)
+    flySpeed = math.floor(10 + value * 90)
+    speedLabel.Text = "Speed: " .. flySpeed
+    fill.Size = UDim2.new(value, 0, 1, 0)
+end
+
+slider.MouseButton1Down:Connect(function(x)
+    local relativeX = x - slider.AbsolutePosition.X
+    local value = math.clamp(relativeX / slider.AbsoluteSize.X, 0, 1)
+    updateSpeed(value)
+end)
+
+slider.TouchLongPress:Connect(function(touchPos)
+    local relativeX = touchPos.X - slider.AbsolutePosition.X
+    local value = math.clamp(relativeX / slider.AbsoluteSize.X, 0, 1)
+    updateSpeed(value)
+end)
+
+-- Функция включения/выключения полета
+local function toggleFly()
+    flying = not flying
+    
+    if flying then
+        humanoid.PlatformStand = true
+        local bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.Name = "FlyGyro"
+        bodyGyro.Parent = rootPart
+        bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyGyro.P = 10000
+        bodyGyro.D = 500
+        
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Name = "FlyVelocity"
+        bodyVelocity.Parent = rootPart
+        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        
+        toggleButton.Text = "Disable Flight"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+    else
+        humanoid.PlatformStand = false
+        if rootPart:FindFirstChild("FlyGyro") then
+            rootPart.FlyGyro:Destroy()
+        end
+        if rootPart:FindFirstChild("FlyVelocity") then
+            rootPart.FlyVelocity:Destroy()
+        end
+        
+        toggleButton.Text = "Enable Flight"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    end
+end
+
+-- Обработка кнопок управления
+local controlActive = {
+    Up = false,
+    Down = false,
+    Left = false,
+    Right = false,
+    Forward = false
+}
+
+local function setControl(control, state)
+    controlActive[control] = state
+end
+
+upButton.MouseButton1Down:Connect(function() setControl("Up", true) end)
+upButton.MouseButton1Up:Connect(function() setControl("Up", false) end)
+upButton.TouchStarted:Connect(function() setControl("Up", true) end)
+upButton.TouchEnded:Connect(function() setControl("Up", false) end)
+
+downButton.MouseButton1Down:Connect(function() setControl("Down", true) end)
+downButton.MouseButton1Up:Connect(function() setControl("Down", false) end)
+downButton.TouchStarted:Connect(function() setControl("Down", true) end)
+downButton.TouchEnded:Connect(function() setControl("Down", false) end)
+
+leftButton.MouseButton1Down:Connect(function() setControl("Left", true) end)
+leftButton.MouseButton1Up:Connect(function() setControl("Left", false) end)
+leftButton.TouchStarted:Connect(function() setControl("Left", true) end)
+leftButton.TouchEnded:Connect(function() setControl("Left", false) end)
+
+rightButton.MouseButton1Down:Connect(function() setControl("Right", true) end)
+rightButton.MouseButton1Up:Connect(function() setControl("Right", false) end)
+rightButton.TouchStarted:Connect(function() setControl("Right", true) end)
+rightButton.TouchEnded:Connect(function() setControl("Right", false) end)
+
+forwardButton.MouseButton1Down:Connect(function() setControl("Forward", true) end)
+forwardButton.MouseButton1Up:Connect(function() setControl("Forward", false) end)
+forwardButton.TouchStarted:Connect(function() setControl("Forward", true) end)
+forwardButton.TouchEnded:Connect(function() setControl("Forward", false) end)
+
+-- Основной цикл полета
+game:GetService("RunService").Heartbeat:Connect(function()
+    if flying and rootPart and humanoid then
+        local flyGyro = rootPart:FindFirstChild("FlyGyro")
+        local flyVelocity = rootPart:FindFirstChild("FlyVelocity")
+        
+        if flyGyro and flyVelocity then
+            local direction = Vector3.new(0, 0, 0)
+            
+            -- Вертикальное движение
+            if controlActive.Up then
+                direction = direction + Vector3.new(0, 1, 0)
+            elseif controlActive.Down then
+                direction = direction + Vector3.new(0, -1, 0)
+            end
+            
+            -- Горизонтальное движение
+            if controlActive.Forward then
+                direction = direction + rootPart.CFrame.LookVector
+            end
+            
+            if controlActive.Left then
+                direction = direction - rootPart.CFrame.RightVector
+            elseif controlActive.Right then
+                direction = direction + rootPart.CFrame.RightVector
+            end
+            
+            -- Нормализация и применение скорости
+            if direction.Magnitude > 0 then
+                direction = direction.Unit * flySpeed
+            end
+            
+            flyVelocity.Velocity = direction
+            
+            -- Поворот камеры
+            local camera = workspace.CurrentCamera
+            if camera then
+                flyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + camera.CFrame.LookVector)
+            end
+        end
+    end
+end)
+
+-- Очистка при смерти персонажа
+character:WaitForChild("Humanoid").Died:Connect(function()
+    flying = false
+    if rootPart:FindFirstChild("FlyGyro") then
+        rootPart.FlyGyro:Destroy()
+    end
+    if rootPart:FindFirstChild("FlyVelocity") then
+        rootPart.FlyVelocity:Destroy()
+    end
+    humanoid.PlatformStand = false
+    
+    toggleButton.Text = "Enable Flight"
+    toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+end)
+
+print("Mobile fly script loaded! Tap the menu button to open controls.")
